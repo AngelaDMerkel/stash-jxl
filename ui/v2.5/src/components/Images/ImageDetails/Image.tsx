@@ -64,6 +64,10 @@ const ImagePage: React.FC<IProps> = ({ image }) => {
 
   const [activeTabKey, setActiveTabKey] = useState("image-details-panel");
 
+  const [imageSrc, setImageSrc] = useState(image.paths.image ?? "");
+
+  useEffect(() => setImageSrc(image.paths.image ?? ""), [image.paths.image]);
+
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState<boolean>(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
 
@@ -390,7 +394,12 @@ const ImagePage: React.FC<IProps> = ({ image }) => {
                 : {}
             }
             alt={title}
-            src={image.paths.image ?? ""}
+            src={imageSrc}
+            onError={
+              ImageView === "img" && imageSrc !== image.paths.thumbnail
+                ? () => setImageSrc(image.paths.thumbnail ?? "")
+                : undefined
+            }
           />
         )}
       </div>

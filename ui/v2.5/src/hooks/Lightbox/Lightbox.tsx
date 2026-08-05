@@ -1021,6 +1021,7 @@ export const LightboxComponent: React.FC<IProps> = ({
                 {i >= currentIndex - 1 && i <= currentIndex + 1 ? (
                   <LightboxImage
                     src={image.paths.image ?? ""}
+                    fallbackSrc={image.paths.thumbnail ?? ""}
                     width={image.visual_files?.[0]?.width ?? 0}
                     height={image.visual_files?.[0]?.height ?? 0}
                     displayMode={displayMode}

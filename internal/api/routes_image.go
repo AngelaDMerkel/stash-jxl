@@ -131,8 +131,12 @@ func (rs imageRoutes) Image(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rs imageRoutes) serveImage(w http.ResponseWriter, r *http.Request, i *models.Image, useDefault bool) {
-	if i.Files.Primary() != nil {
-		err := i.Files.Primary().Base().Serve(&file.OsFS{}, w, r)
+	if primary := i.Files.Primary(); primary != nil {
+		if imageFile, ok := primary.(*models.ImageFile); ok && imageFile.Format == "jpegxl" {
+			w.Header().Set("Content-Type", "image/jxl")
+		}
+
+		err := primary.Base().Serve(&file.OsFS{}, w, r)
 		if err == nil {
 			return
 		}
