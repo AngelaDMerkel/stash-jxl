@@ -52,6 +52,7 @@ function calculateDefaultZoom(
 
 interface IProps {
   src: string;
+  fallbackSrc?: string;
   width: number;
   height: number;
   displayMode: GQL.ImageLightboxDisplayMode;
@@ -76,6 +77,7 @@ interface IProps {
 
 export const LightboxImage: React.FC<IProps> = ({
   src,
+  fallbackSrc,
   width,
   height,
   displayMode,
@@ -94,6 +96,7 @@ export const LightboxImage: React.FC<IProps> = ({
   onRight,
   isVideo,
 }) => {
+  const [resolvedSrc, setResolvedSrc] = useState(src);
   const [defaultZoom, setDefaultZoom] = useState(1);
   const [moving, setMoving] = useState(false);
   const [positionX, setPositionX] = useState(0);
@@ -103,6 +106,8 @@ export const LightboxImage: React.FC<IProps> = ({
   const [boxWidth, setBoxWidth] = useState(0);
   const [boxHeight, setBoxHeight] = useState(0);
   const dimensionsProvided = width > 0 && height > 0;
+
+  useEffect(() => setResolvedSrc(src), [src]);
 
   const mouseDownEvent = useRef<MouseEvent>();
   const resetPositionRef = useRef(resetPosition);
@@ -559,11 +564,11 @@ export const LightboxImage: React.FC<IProps> = ({
             })`,
           }}
         >
-          <source srcSet={src} media="(min-width: 800px)" />
+          <source srcSet={resolvedSrc} media="(min-width: 800px)" />
           {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
           <ImageView
             loop={isVideo}
-            src={src}
+            src={resolvedSrc}
             alt=""
             draggable={false}
             style={{ touchAction: "none" }}
@@ -576,6 +581,11 @@ export const LightboxImage: React.FC<IProps> = ({
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
             onPointerMove={onPointerMove}
+            onError={
+              !isVideo && fallbackSrc && resolvedSrc !== fallbackSrc
+                ? () => setResolvedSrc(fallbackSrc)
+                : undefined
+            }
           />
         </picture>
       ) : undefined}

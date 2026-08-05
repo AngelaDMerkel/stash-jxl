@@ -96,6 +96,9 @@ func (e *ThumbnailEncoder) GetThumbnail(f models.File, maxSize int) ([]byte, err
 		if animated {
 			return nil, fmt.Errorf("%w: %s", ErrNotSupportedForThumbnail, format)
 		}
+		if format == "jpegxl" {
+			return e.ffmpegImageThumbnail(buf, maxSize)
+		}
 	}
 
 	// Videofiles can only be thumbnailed with ffmpeg

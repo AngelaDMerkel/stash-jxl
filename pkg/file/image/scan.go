@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 
 	_ "image/gif"
 	_ "image/jpeg"
@@ -26,8 +30,10 @@ func (d *Decorator) Decorate(ctx context.Context, fs models.FS, f models.File) (
 	base := f.Base()
 
 	// ignore clips in non-OsFS filesystems as ffprobe cannot read them
-	// TODO - copy to temp file if not an OsFS
 	if _, isOs := fs.(*file.OsFS); !isOs {
+		if strings.EqualFold(filepath.Ext(base.Path), ".jxl") {
+			return d.decorateJXL(fs, f)
+		}
 		logger.Debugf("assuming ImageFile for non-OsFS file %q", base.Path)
 		return decorateFallback(fs, f)
 	}
@@ -68,6 +74,45 @@ func (d *Decorator) Decorate(ctx context.Context, fs models.FS, f models.File) (
 	}
 
 	adjustForOrientation(fs, base.Path, ret)
+
+	return ret, nil
+}
+
+func (d *Decorator) decorateJXL(fs models.FS, f models.File) (models.File, error) {
+	reader, err := f.Open(fs)
+	if err != nil {
+		return f, err
+	}
+	defer reader.Close()
+
+	tmp, err := os.CreateTemp("", "stash-*.jxl")
+	if err != nil {
+		return f, err
+	}
+	defer func() {
+		_ = tmp.Close()
+		_ = os.Remove(tmp.Name())
+	}()
+
+	if _, err := io.Copy(tmp, reader); err != nil {
+		return f, err
+	}
+	if err := tmp.Close(); err != nil {
+		return f, err
+	}
+
+	probe, err := d.FFProbe.NewVideoFile(tmp.Name())
+	if err != nil {
+		return f, err
+	}
+
+	ret := &models.ImageFile{
+		BaseFile: f.Base(),
+		Format:   probe.VideoCodec,
+		Width:    probe.Width,
+		Height:   probe.Height,
+	}
+	adjustForOrientation(fs, f.Base().Path, ret)
 
 	return ret, nil
 }

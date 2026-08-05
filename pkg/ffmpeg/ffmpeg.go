@@ -60,6 +60,9 @@ func ValidateFFMpegCodecSupport(ffmpegPath string) error {
 	if !strings.Contains(output, "--enable-libwebp") {
 		missingSupport = append(missingSupport, "libwebp")
 	}
+	if !strings.Contains(output, "--enable-libjxl") {
+		missingSupport = append(missingSupport, "libjxl")
+	}
 
 	if len(missingSupport) > 0 {
 		return fmt.Errorf("ffmpeg missing codec support: %v", missingSupport)
